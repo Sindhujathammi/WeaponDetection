@@ -300,6 +300,29 @@
         .clear-button:hover {
             opacity: 0.9;
         }
+
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .download-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: opacity 0.2s ease-in-out;
+            margin-top: 10px;
+        }
+
+        .download-button:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -578,11 +601,24 @@
                             img.style.maxWidth = '100%';
                             fileDiv.appendChild(img);
                         } else if (file.type === 'video') {
+                            const videoContainer = document.createElement('div');
+                            videoContainer.className = 'video-container';
+                            
                             const video = document.createElement('video');
                             video.src = file.url;
                             video.controls = true;
                             video.style.maxWidth = '100%';
-                            fileDiv.appendChild(video);
+                            videoContainer.appendChild(video);
+
+                            // Add download button for video
+                            const downloadBtn = document.createElement('a');
+                            downloadBtn.href = file.url;
+                            downloadBtn.download = file.name; // Set the download filename
+                            downloadBtn.className = 'download-button';
+                            downloadBtn.innerHTML = '⬇️ Download Video';
+                            videoContainer.appendChild(downloadBtn);
+
+                            fileDiv.appendChild(videoContainer);
                         }
 
                         const details = document.createElement('div');
@@ -682,6 +718,34 @@
             }
         `;
         document.head.appendChild(clearButtonStyle);
+
+        // Add CSS for download button
+        const downloadButtonStyle = document.createElement('style');
+        downloadButtonStyle.textContent = `
+            .video-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .download-button {
+                display: inline-block;
+                background-color: var(--primary-color);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                text-decoration: none;
+                transition: opacity 0.2s ease-in-out;
+                margin-top: 10px;
+            }
+
+            .download-button:hover {
+                opacity: 0.9;
+            }
+        `;
+        document.head.appendChild(downloadButtonStyle);
     </script>
 </body>
 </html>
