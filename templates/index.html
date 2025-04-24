@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Pistol Detection</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --container-bg: #ffffff;
+            --text-color: #343a40;
+            --border-color: #dee2e6;
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e1e1e1;
+            --border-color: #404040;
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        form {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        input[type=file] {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            flex-grow: 1;
+            max-width: 400px;
+        }
+
+        input[type=file]::file-selector-button {
+            background-color: var(--text-color);
+            color: var(--container-bg);
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        input[type=file]::file-selector-button:hover {
+            background-color: var(--primary-color);
+        }
+
+        button[type=submit] {
+            background-color: var(--primary-color);
+            color: var(--container-bg);
+            padding: 10px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        button[type=submit]:hover {
+            background-color: var(--primary-color);
+        }
+
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .flash-messages li {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-messages .danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .flash-messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        .result {
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+        }
+
+        .result h2 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .result img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .result p small {
+            color: var(--text-color);
+            display: block;
+            margin-top: 15px;
+        }
+
+        .process-button {
+            background-color: var(--success-color);
+            color: var(--container-bg);
+            padding: 10px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease-in-out;
+            margin-top: 15px;
+        }
+
+        .process-button:hover {
+            background-color: var(--success-color);
+        }
+
+        .process-button:disabled {
+            background-color: var(--text-color);
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--success-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .theme-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .theme-switch button {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .file-info {
+            margin: 15px 0;
+            padding: 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .drag-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            transition: border-color 0.3s ease;
+        }
+
+        .drag-area.active {
+            border-color: var(--success-color);
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .clear-button-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .clear-button {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .clear-button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-switch">
+        <button onclick="toggleTheme()">🌓 Toggle Theme</button>
+    </div>
+
+    <div class="container">
+        <h1>🔫 Pistol Detection AI</h1>
+
+        <div class="user-info" style="position: absolute; top: 20px; left: 20px;">
+            <span style="margin-right: 10px;">Welcome, {{ session.username }}</span>
+            <a href="{{ url_for('logout') }}" style="color: var(--danger-color); text-decoration: none;">Logout</a>
+        </div>
+
+        <!-- Add clear results button -->
+        <div class="clear-button-container" style="position: absolute; top: 20px; right: 20px;">
+            <button onclick="clearResults()" class="clear-button">Clear All Results</button>
+        </div>
+
+        <!-- Display Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <div class="drag-area" id="dragArea">
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_page') }}" id="upload-form">
+                <input type="file" name="file" accept="image/png, image/jpeg, image/jpg, video/mp4" required 
+                       title="Select an image or video file (png, jpg, jpeg, mp4)" id="fileInput"
+                       style="display: none;">
+                <p>Drag and drop files here or click to select</p>
+                <button type="button" onclick="document.getElementById('fileInput').click()">Select File</button>
+            </form>
+        </div>
+
+        <!-- Add status container -->
+        <div id="status" class="status-message" style="margin: 20px 0; display: none;"></div>
+
+        <div id="fileInfo" class="file-info" style="display: none;">
+            <h3>File Information</h3>
+            <p>Name: <span id="fileName"></span></p>
+            <p>Size: <span id="fileSize"></span></p>
+            <p>Type: <span id="fileType"></span></p>
+        </div>
+
+        {% if uploaded_file %}
+            <button class="process-button" onclick="processFile('{{ uploaded_file }}')">Process File</button>
+            
+            <div class="progress-container" style="display: none;" id="progressContainer">
+                <h3>Processing Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <p id="progressText">0%</p>
+            </div>
+
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Processing... Please wait</p>
+            </div>
+        {% endif %}
+
+        <!-- Add results container -->
+        <div id="results" class="results-container" style="margin-top: 30px;"></div>
+
+        <!-- Display Detection Result -->
+        <div id="result" class="result" style="display: none;">
+            <h2>Detection Result</h2>
+            <div id="result-content"></div>
+
+            <div class="stats-container" id="statsContainer" style="display: none;">
+                <div class="stat-card">
+                    <h4>Total Detections</h4>
+                    <div class="stat-value" id="totalDetections">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Frames Processed</h4>
+                    <div class="stat-value" id="framesProcessed">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Processing Time</h4>
+                    <div class="stat-value" id="processingTime">0s</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.documentElement;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Set initial theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Drag and drop functionality
+        const dragArea = document.getElementById('dragArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('upload-form');
+        const fileInfo = document.getElementById('fileInfo');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dragArea.addEventListener(eventName, () => {
+                dragArea.classList.add('active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, () => {
+                dragArea.classList.remove('active');
+            });
+        });
+
+        dragArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            handleFile(file);
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            handleFile(file);
+        }
+
+        function handleFile(file) {
+            if (file) {
+                // Update file info display
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('fileType').textContent = file.type;
+                fileInfo.style.display = 'block';
+
+                // Submit the form
+                const formData = new FormData(uploadForm);
+                formData.set('file', file);
+                fetch('{{ url_for("upload_page") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.documentElement.innerHTML = html;
+                    // Reattach event listeners
+                    attachEventListeners();
+                });
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function processFile(filename) {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            const resultContainer = document.getElementById('result');
+            
+            // Clear previous results
+            if (resultsDiv) {
+                resultsDiv.innerHTML = '';
+            }
+            if (resultContainer) {
+                resultContainer.style.display = 'none';
+            }
+            
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = 'Processing...';
+            }
+            
+            fetch(`/process/${filename}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (statusDiv) {
+                        statusDiv.textContent = data.message;
+                    }
+                    // Display the processed files after successful processing
+                    displayProcessedFiles();
+                } else {
+                    if (statusDiv) {
+                        statusDiv.textContent = data.error || 'Processing failed';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (statusDiv) {
+                    statusDiv.textContent = 'Error during processing';
+                }
+            });
+        }
+
+        function attachEventListeners() {
+            // Reattach all event listeners after form submission
+            const dragArea = document.getElementById('dragArea');
+            const fileInput = document.getElementById('fileInput');
+            if (dragArea && fileInput) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dragArea.addEventListener(eventName, preventDefaults, false);
+                });
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dragArea.addEventListener(eventName, () => {
+                        dragArea.classList.add('active');
+                    });
+                });
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dragArea.addEventListener(eventName, () => {
+                        dragArea.classList.remove('active');
+                    });
+                });
+                dragArea.addEventListener('drop', handleDrop);
+                fileInput.addEventListener('change', handleFileSelect);
+            }
+        }
+
+        // Initial attachment of event listeners
+        attachEventListeners();
+
+        // Function to display processed files
+        function displayProcessedFiles() {
+            fetch('/get_processed_files')
+                .then(response => response.json())
+                .then(files => {
+                    const resultsDiv = document.getElementById('results');
+                    if (!resultsDiv) {
+                        console.warn('Results container not found');
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = ''; // Clear existing results
+
+                    if (files.length === 0) {
+                        resultsDiv.innerHTML = '<p>No processed files yet.</p>';
+                        return;
+                    }
+
+                    files.forEach(file => {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'result-item';
+
+                        if (file.type === 'image') {
+                            const img = document.createElement('img');
+                            img.src = file.url;
+                            img.alt = file.name;
+                            img.style.maxWidth = '100%';
+                            fileDiv.appendChild(img);
+                        } else if (file.type === 'video') {
+                            const video = document.createElement('video');
+                            video.src = file.url;
+                            video.controls = true;
+                            video.style.maxWidth = '100%';
+                            fileDiv.appendChild(video);
+                        }
+
+                        const details = document.createElement('div');
+                        details.className = 'result-details';
+                        details.innerHTML = `
+                            <p>File: ${file.name}</p>
+                            <p>Detections: ${file.detections}</p>
+                        `;
+                        fileDiv.appendChild(details);
+                        resultsDiv.appendChild(fileDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching processed files:', error);
+                    const resultsDiv = document.getElementById('results');
+                    if (resultsDiv) {
+                        resultsDiv.innerHTML = '<p>Error loading results.</p>';
+                    }
+                });
+        }
+
+        // Add CSS for status message
+        const statusStyle = document.createElement('style');
+        statusStyle.textContent = `
+            .status-message {
+                padding: 10px;
+                border-radius: 4px;
+                background-color: var(--bg-color);
+                border: 1px solid var(--border-color);
+                margin: 10px 0;
+                text-align: center;
+            }
+        `;
+        document.head.appendChild(statusStyle);
+
+        // Add clear results function
+        function clearResults() {
+            if (confirm('Are you sure you want to clear all results? This cannot be undone.')) {
+                fetch('/clear_results', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Clear the results container
+                        const resultsDiv = document.getElementById('results');
+                        if (resultsDiv) {
+                            resultsDiv.innerHTML = '<p>No processed files yet.</p>';
+                        }
+                        // Clear the result content
+                        const resultContent = document.getElementById('result-content');
+                        if (resultContent) {
+                            resultContent.innerHTML = '';
+                        }
+                        // Hide the result container
+                        const resultContainer = document.getElementById('result');
+                        if (resultContainer) {
+                            resultContainer.style.display = 'none';
+                        }
+                        // Reset file info
+                        const fileInfo = document.getElementById('fileInfo');
+                        if (fileInfo) {
+                            fileInfo.style.display = 'none';
+                        }
+                        // Show success message
+                        const statusDiv = document.getElementById('status');
+                        if (statusDiv) {
+                            statusDiv.style.display = 'block';
+                            statusDiv.textContent = data.message;
+                        }
+                    } else {
+                        alert('Error clearing results: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error clearing results');
+                });
+            }
+        }
+
+        // Add CSS for clear button
+        const clearButtonStyle = document.createElement('style');
+        clearButtonStyle.textContent = `
+            .clear-button {
+                background-color: var(--danger-color);
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 16px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: opacity 0.2s ease-in-out;
+            }
+            .clear-button:hover {
+                opacity: 0.9;
+            }
+        `;
+        document.head.appendChild(clearButtonStyle);
+    </script>
+</body>
+</html>

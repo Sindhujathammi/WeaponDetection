@@ -1,0 +1,7 @@
+Flask==2.0.3
+ultralytics
+Werkzeug==2.0.3
+opencv-python-headless
+numpy
+torch
+torchvision
